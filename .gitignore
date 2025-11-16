@@ -1,0 +1,13 @@
+__pycache__/config.cpython-313.pyc
+__pycache__/game.cpython-313.pyc
+effects/__pycache__/__init__.cpython-313.pyc
+ui/__pycache__/__init__.cpython-313.pyc
+ui/__pycache__/menu.cpython-313.pyc
+ui/__pycache__/settings.cpython-313.pyc
+sprites/__pycache__/__init__.cpython-313.pyc
+sprites/__pycache__/bullet.cpython-313.pyc
+sprites/__pycache__/enemy.cpython-313.pyc
+sprites/__pycache__/player.cpython-313.pyc
+sprites/__pycache__/powerup.cpython-313.pyc
+effects/__pycache__/explosions.cpython-313.pyc
+effects/__pycache__/stars.cpython-313.pyc
