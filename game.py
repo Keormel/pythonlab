@@ -167,22 +167,23 @@ class Game:
         
         if now < self.player.shield_until:
             remaining = int((self.player.shield_until - now) / 1000)
-            statuses.append((f"SHIELD [{remaining}s]", config.POWERUP_COLOR))
+            statuses.append((f"SHIELD [{remaining}s]", (100, 200, 255)))
         if now < self.player.rapidfire_until:
             remaining = int((self.player.rapidfire_until - now) / 1000)
-            statuses.append((f"RAPID [{remaining}s]", (255, 200, 50)))
+            statuses.append((f"RAPID [{remaining}s]", (255, 220, 100)))
         if now < self.player.speed_boost_until:
             remaining = int((self.player.speed_boost_until - now) / 1000)
             statuses.append((f"BOOST [{remaining}s]", (100, 255, 200)))
         if now < self.player.dual_shot_until:
             remaining = int((self.player.dual_shot_until - now) / 1000)
-            statuses.append((f"DUAL [{remaining}s]", (200, 100, 255)))
+            statuses.append((f"DUAL [{remaining}s]", (220, 150, 255)))
         
         for status_text, color in statuses:
             txt = self.small_font.render(status_text, True, color)
-            pygame.draw.rect(self.screen, (0, 0, 0, 100), (5, y_offset - 5, 220, 28), border_radius=5)
+            pygame.draw.rect(self.screen, (20, 20, 40), (5, y_offset - 5, 240, 32), border_radius=6)
+            pygame.draw.rect(self.screen, color, (5, y_offset - 5, 240, 32), 2, border_radius=6)
             self.screen.blit(txt, (15, y_offset))
-            y_offset += 32
+            y_offset += 38
 
     def draw(self):
         self.screen.fill(config.BG_COLOR)
@@ -192,13 +193,16 @@ class Game:
         
         now = pygame.time.get_ticks()
         
-        # Основной HUD
+        # Top HUD bar
+        pygame.draw.rect(self.screen, (20, 20, 40), (0, 0, config.SCREEN_W, 45), border_radius=0)
+        pygame.draw.line(self.screen, (100, 100, 150), (0, 45), (config.SCREEN_W, 45), 2)
+        
         hud = self.font.render(
-            f"Score: {self.state['score']}  Lv: {self.state['level']}  Wave: {self.state['wave']}  HP: {max(0, self.player.hp)}/{self.player.max_hp}",
+            f"Score: {self.state['score']}  Level: {self.state['level']}  Wave: {self.state['wave']}  HP: {max(0, self.player.hp)}/{self.player.max_hp}",
             True,
-            config.UI_COLOR
+            (200, 220, 255)
         )
-        self.screen.blit(hud, (8, 8))
+        self.screen.blit(hud, (12, 10))
         
         # Статус активных бонусов
         self.draw_powerup_status(now)
@@ -209,12 +213,16 @@ class Game:
         # FPS счётчик
         if self.menu.settings.show_fps:
             fps = self.clock.get_fps()
-            fps_txt = self.tiny_font.render(f"FPS: {int(fps)}", True, (100, 255, 100))
-            self.screen.blit(fps_txt, (config.SCREEN_W - 100, 10))
+            fps_txt = self.tiny_font.render(f"FPS: {int(fps)}", True, (150, 255, 100))
+            fps_bg = pygame.Surface((95, 22))
+            fps_bg.fill((20, 20, 40))
+            pygame.draw.rect(fps_bg, (150, 255, 100), (0, 0, 95, 22), 1)
+            self.screen.blit(fps_bg, (config.SCREEN_W - 105, 10))
+            self.screen.blit(fps_txt, (config.SCREEN_W - 100, 12))
         
         # Сложность
-        difficulty_txt = self.tiny_font.render(f"{self.menu.settings.difficulty}", True, (200, 150, 100))
-        self.screen.blit(difficulty_txt, (config.SCREEN_W - 140, 32))
+        difficulty_txt = self.tiny_font.render(f"Difficulty: {self.menu.settings.difficulty}", True, (220, 160, 100))
+        self.screen.blit(difficulty_txt, (12, config.SCREEN_H - 25))
         
         if self.state["game_over"]:
             self._draw_game_over()
@@ -222,31 +230,40 @@ class Game:
         pygame.display.flip()
 
     def _draw_player_health_bar(self):
-        bar_x = config.SCREEN_W // 2 - 70
-        bar_y = config.SCREEN_H - 25
-        bar_width = 140
-        bar_height = 12
+        bar_x = config.SCREEN_W // 2 - 80
+        bar_y = config.SCREEN_H - 30
+        bar_width = 160
+        bar_height = 14
         
-        pygame.draw.rect(self.screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height), border_radius=3)
+        pygame.draw.rect(self.screen, (40, 40, 60), (bar_x - 2, bar_y - 2, bar_width + 4, bar_height + 4), border_radius=3)
+        pygame.draw.rect(self.screen, (30, 30, 50), (bar_x, bar_y, bar_width, bar_height), border_radius=3)
+        
         fill_width = (self.player.hp / self.player.max_hp) * bar_width
         color = (100, 255, 100) if self.player.hp > 1 else (255, 100, 100)
         pygame.draw.rect(self.screen, color, (bar_x, bar_y, int(fill_width), bar_height), border_radius=3)
-        pygame.draw.rect(self.screen, config.UI_COLOR, (bar_x, bar_y, bar_width, bar_height), 2, border_radius=3)
+        pygame.draw.rect(self.screen, (200, 220, 255), (bar_x, bar_y, bar_width, bar_height), 2, border_radius=3)
+        
+        hp_text = self.tiny_font.render(f"HP: {max(0, self.player.hp)}", True, (200, 220, 255))
+        self.screen.blit(hp_text, (bar_x - 50, bar_y - 3))
 
     def _draw_game_over(self):
         overlay = pygame.Surface((config.SCREEN_W, config.SCREEN_H), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 160))
+        overlay.fill((0, 0, 0, 180))
         self.screen.blit(overlay, (0, 0))
         
         txt1 = self.big_font.render("GAME OVER", True, (255, 100, 100))
-        txt2 = self.font.render(f"Score: {self.state['score']} | Lv: {self.state['level']} | Wave: {self.state['wave']}", True, config.UI_COLOR)
-        txt3 = self.font.render(f"Difficulty: {self.menu.settings.difficulty}", True, (200, 150, 100))
-        txt4 = self.font.render("R - restart   ESC - menu", True, config.UI_COLOR)
-        
+        txt1_shadow = self.big_font.render("GAME OVER", True, (50, 20, 20))
+        self.screen.blit(txt1_shadow, (txt1.get_rect(center=(config.SCREEN_W // 2 + 3, config.SCREEN_H // 2 - 60 + 3))).topleft)
         self.screen.blit(txt1, txt1.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 - 60)))
+        
+        txt2 = self.font.render(f"Score: {self.state['score']}  |  Level: {self.state['level']}  |  Wave: {self.state['wave']}", True, (200, 220, 255))
         self.screen.blit(txt2, txt2.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2)))
-        self.screen.blit(txt3, txt3.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 + 40)))
-        self.screen.blit(txt4, txt4.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 + 100)))
+        
+        txt3 = self.font.render(f"Difficulty: {self.menu.settings.difficulty}", True, (220, 160, 100))
+        self.screen.blit(txt3, txt3.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 + 50)))
+        
+        txt4 = self.font.render("Press [R] to restart  or  [ESC] for menu", True, (150, 200, 150))
+        self.screen.blit(txt4, txt4.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 + 110)))
 
     def run(self):
         self.show_menu()

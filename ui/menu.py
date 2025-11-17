@@ -9,7 +9,7 @@ class Menu:
         self.font = font
         self.big_font = big_font
         self.settings = Settings()
-        self.state = "main"  # main, difficulty, settings
+        self.state = "main"
         self.selected = 0
         self.difficulties = list(Settings.DIFFICULTIES.keys())
         self.animation_counter = 0
@@ -89,7 +89,6 @@ class Menu:
         pygame.display.flip()
 
     def _draw_animated_bg(self):
-        # Анимированный фон со звёздами
         for i in range(80):
             x = (i * 59) % config.SCREEN_W
             y = (i * 73 + self.animation_counter // 2) % config.SCREEN_H
@@ -98,152 +97,135 @@ class Menu:
             pygame.draw.circle(self.screen, (shade, shade, 200), (x, y), size)
 
     def _draw_main_menu(self):
-        # Заголовок с пульсирующим эффектом
-        pulse = 1.0 + 0.1 * math.sin(self.animation_counter * 0.02)
-        title_size = int(54 * pulse)
+        pulse = 1.0 + 0.15 * math.sin(self.animation_counter * 0.02)
+        title_size = int(72 * pulse)
         title_font = pygame.font.SysFont("arial", title_size, bold=True)
         title = title_font.render("ARCADE", True, config.PLAYER_COLOR)
-        self.screen.blit(title, title.get_rect(center=(config.SCREEN_W // 2, 70)))
+        title_rect = title.get_rect(center=(config.SCREEN_W // 2, 60))
         
-        subtitle = self.font.render("TOP-DOWN", True, (100, 200, 255))
-        self.screen.blit(subtitle, subtitle.get_rect(center=(config.SCREEN_W // 2, 120)))
+        shadow = title_font.render("ARCADE", True, (20, 20, 50))
+        self.screen.blit(shadow, (title_rect.x + 3, title_rect.y + 3))
+        self.screen.blit(title, title_rect)
+        
+        subtitle = pygame.font.SysFont("arial", 32, bold=True).render("TOP-DOWN SHOOTER", True, (100, 200, 255))
+        self.screen.blit(subtitle, subtitle.get_rect(center=(config.SCREEN_W // 2, 125)))
         
         menu_items = [
-            ("PLAY", "🎮"),
-            ("SETTINGS", "⚙️"),
-            ("EXIT", "❌"),
+            ("PLAY", (100, 200, 255)),
+            ("SETTINGS", (100, 255, 200)),
+            ("EXIT", (255, 150, 150)),
         ]
         
-        y_start = 220
-        for i, (text, emoji) in enumerate(menu_items):
+        y_start = 240
+        item_height = 75
+        
+        for i, (text, color) in enumerate(menu_items):
             is_selected = i == self.selected
+            y_pos = y_start + i * item_height
             
             if is_selected:
-                # Анимированный фон для выбранного пункта
-                rect_color = (255, 200, 100, 80)
-                pygame.draw.rect(self.screen, (255, 200, 100), (35, y_start + i * 80 - 18, 410, 56), border_radius=12)
-                color = (255, 255, 255)
-                prefix = "▶ "
-                size_mult = 1.15
+                scale = 1.0 + 0.1 * math.sin(self.animation_counter * 0.1)
+                pygame.draw.rect(self.screen, color, (50, y_pos - 20, 380, 55), border_radius=10)
+                pygame.draw.rect(self.screen, (255, 255, 255), (50, y_pos - 20, 380, 55), 3, border_radius=10)
+                text_color = (10, 10, 20)
+                font_size = int(36 * scale)
             else:
-                color = config.UI_COLOR
-                prefix = "  "
-                size_mult = 1.0
+                pygame.draw.rect(self.screen, color, (50, y_pos - 20, 380, 55), 2, border_radius=10)
+                text_color = color
+                font_size = 32
             
-            # Эмодзи
-            emoji_font = pygame.font.SysFont("arial", int(32 * size_mult), bold=True)
-            emoji_txt = emoji_font.render(emoji, True, color)
-            emoji_x = config.SCREEN_W // 2 - 140
-            self.screen.blit(emoji_txt, (emoji_x, y_start + i * 80 - 8))
-            
-            # Текст
-            txt_font = pygame.font.SysFont("arial", int(32 * size_mult), bold=True)
-            txt = txt_font.render(f"{prefix}{text}", True, color)
-            self.screen.blit(txt, txt.get_rect(center=(config.SCREEN_W // 2 + 40, y_start + i * 80)))
+            txt_font = pygame.font.SysFont("arial", font_size, bold=True)
+            txt = txt_font.render(text, True, text_color)
+            self.screen.blit(txt, txt.get_rect(center=(config.SCREEN_W // 2, y_pos)))
 
     def _draw_difficulty_menu(self):
-        pulse = 1.0 + 0.1 * math.sin(self.animation_counter * 0.02)
-        title_size = int(48 * pulse)
+        pulse = 1.0 + 0.15 * math.sin(self.animation_counter * 0.02)
+        title_size = int(72 * pulse)
         title_font = pygame.font.SysFont("arial", title_size, bold=True)
-        title = title_font.render("DIFFICULTY", True, config.ENEMY_COLOR)
-        self.screen.blit(title, title.get_rect(center=(config.SCREEN_W // 2, 50)))
+        title = title_font.render("SELECT DIFFICULTY", True, config.ENEMY_COLOR)
+        title_rect = title.get_rect(center=(config.SCREEN_W // 2, 60))
+        
+        shadow = title_font.render("SELECT DIFFICULTY", True, (20, 20, 50))
+        self.screen.blit(shadow, (title_rect.x + 3, title_rect.y + 3))
+        self.screen.blit(title, title_rect)
         
         descriptions = {
-            "Easy": "Relax Mode",
-            "Normal": "Balanced",
-            "Hard": "Challenge",
-            "Nightmare": "Extreme",
-        }
-        
-        emojis = {
-            "Easy": "😊",
-            "Normal": "😐",
-            "Hard": "😈",
-            "Nightmare": "💀",
+            "Easy": "Perfect for beginners",
+            "Normal": "Well balanced gameplay",
+            "Hard": "For experienced players",
+            "Nightmare": "Ultimate challenge",
         }
         
         colors_difficulty = {
             "Easy": (100, 255, 150),
             "Normal": (100, 200, 255),
-            "Hard": (255, 200, 100),
+            "Hard": (255, 180, 80),
             "Nightmare": (255, 100, 100),
         }
         
-        y_start = 160
+        y_start = 240
+        item_height = 75
+        
         for i, difficulty in enumerate(self.difficulties):
             is_selected = i == self.selected
+            y_pos = y_start + i * item_height
             color = colors_difficulty[difficulty]
-            emoji = emojis[difficulty]
             
             if is_selected:
-                pygame.draw.rect(self.screen, color, (30, y_start + i * 70 - 12, 420, 48), border_radius=8)
-                text_color = (10, 12, 20)
-                prefix = "▶▶ "
-                size_mult = 1.1
+                scale = 1.0 + 0.1 * math.sin(self.animation_counter * 0.1)
+                pygame.draw.rect(self.screen, color, (50, y_pos - 20, 380, 55), border_radius=10)
+                pygame.draw.rect(self.screen, (255, 255, 255), (50, y_pos - 20, 380, 55), 3, border_radius=10)
+                text_color = (10, 10, 20)
+                font_size = int(36 * scale)
             else:
-                pygame.draw.rect(self.screen, color, (30, y_start + i * 70 - 12, 420, 48), 2, border_radius=8)
+                pygame.draw.rect(self.screen, color, (50, y_pos - 20, 380, 55), 2, border_radius=10)
                 text_color = color
-                prefix = "   "
-                size_mult = 1.0
+                font_size = 32
             
-            # Эмодзи
-            emoji_font = pygame.font.SysFont("arial", int(28 * size_mult), bold=True)
-            emoji_txt = emoji_font.render(emoji, True, text_color)
-            self.screen.blit(emoji_txt, (50, y_start + i * 70 - 6))
+            txt_font = pygame.font.SysFont("arial", font_size, bold=True)
+            txt = txt_font.render(difficulty.upper(), True, text_color)
+            self.screen.blit(txt, txt.get_rect(center=(config.SCREEN_W // 2, y_pos - 5)))
             
-            # Название сложности
-            txt_font = pygame.font.SysFont("arial", int(28 * size_mult), bold=True)
-            txt = txt_font.render(f"{prefix}{difficulty}", True, text_color)
-            self.screen.blit(txt, txt.get_rect(center=(config.SCREEN_W // 2 + 30, y_start + i * 70)))
-            
-            # Описание
             desc_font = pygame.font.SysFont("arial", 18)
-            desc = desc_font.render(descriptions[difficulty], True, (180, 180, 180))
-            self.screen.blit(desc, desc.get_rect(center=(config.SCREEN_W // 2 + 30, y_start + i * 70 + 22)))
+            desc = desc_font.render(descriptions[difficulty], True, (180, 180, 200))
+            self.screen.blit(desc, desc.get_rect(center=(config.SCREEN_W // 2, y_pos + 18)))
 
     def _draw_settings_menu(self):
-        pulse = 1.0 + 0.1 * math.sin(self.animation_counter * 0.02)
-        title_size = int(48 * pulse)
+        pulse = 1.0 + 0.15 * math.sin(self.animation_counter * 0.02)
+        title_size = int(72 * pulse)
         title_font = pygame.font.SysFont("arial", title_size, bold=True)
         title = title_font.render("SETTINGS", True, config.POWERUP_COLOR)
-        self.screen.blit(title, title.get_rect(center=(config.SCREEN_W // 2, 50)))
+        title_rect = title.get_rect(center=(config.SCREEN_W // 2, 60))
+        
+        shadow = title_font.render("SETTINGS", True, (20, 20, 50))
+        self.screen.blit(shadow, (title_rect.x + 3, title_rect.y + 3))
+        self.screen.blit(title, title_rect)
         
         settings_items = [
-            (f"SOUND: {'ON' if self.settings.sfx_enabled else 'OFF'}", "🔊" if self.settings.sfx_enabled else "🔇"),
-            (f"FPS: {'ON' if self.settings.show_fps else 'OFF'}", "📊"),
-            (f"DIFF: {self.settings.difficulty}", "⚔️"),
-            ("START GAME", "▶️"),
+            (f"SOUND: {'ON' if self.settings.sfx_enabled else 'OFF'}", (100, 255, 200)),
+            (f"FPS COUNTER: {'ON' if self.settings.show_fps else 'OFF'}", (100, 200, 255)),
+            (f"DIFFICULTY: {self.settings.difficulty.upper()}", (255, 200, 100)),
+            ("START GAME", (100, 255, 150)),
         ]
         
-        option_colors = [
-            (100, 255, 200),
-            (100, 200, 255),
-            (255, 200, 100),
-            (100, 255, 150),
-        ]
+        y_start = 240
+        item_height = 75
         
-        y_start = 180
-        for i, (text, emoji) in enumerate(settings_items):
+        for i, (text, color) in enumerate(settings_items):
             is_selected = i == self.selected
-            color = option_colors[i]
+            y_pos = y_start + i * item_height
             
             if is_selected:
-                pygame.draw.rect(self.screen, color, (30, y_start + i * 70 - 12, 420, 48), border_radius=8)
-                text_color = (10, 12, 20)
-                prefix = "▶▶ "
-                size_mult = 1.1
+                scale = 1.0 + 0.1 * math.sin(self.animation_counter * 0.1)
+                pygame.draw.rect(self.screen, color, (50, y_pos - 20, 380, 55), border_radius=10)
+                pygame.draw.rect(self.screen, (255, 255, 255), (50, y_pos - 20, 380, 55), 3, border_radius=10)
+                text_color = (10, 10, 20)
+                font_size = int(36 * scale)
             else:
-                pygame.draw.rect(self.screen, color, (30, y_start + i * 70 - 12, 420, 48), 2, border_radius=8)
+                pygame.draw.rect(self.screen, color, (50, y_pos - 20, 380, 55), 2, border_radius=10)
                 text_color = color
-                prefix = "   "
-                size_mult = 1.0
+                font_size = 32
             
-            # Эмодзи
-            emoji_font = pygame.font.SysFont("arial", int(28 * size_mult), bold=True)
-            emoji_txt = emoji_font.render(emoji, True, text_color)
-            self.screen.blit(emoji_txt, (50, y_start + i * 70 - 6))
-            
-            # Текст
-            txt_font = pygame.font.SysFont("arial", int(26 * size_mult), bold=True)
-            txt = txt_font.render(f"{prefix}{text}", True, text_color)
-            self.screen.blit(txt, txt.get_rect(center=(config.SCREEN_W // 2 + 30, y_start + i * 70)))
+            txt_font = pygame.font.SysFont("arial", font_size, bold=True)
+            txt = txt_font.render(text, True, text_color)
+            self.screen.blit(txt, txt.get_rect(center=(config.SCREEN_W // 2, y_pos)))
