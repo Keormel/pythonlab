@@ -221,49 +221,67 @@ class Game:
             self.screen.blit(fps_txt, (config.SCREEN_W - fps_bg_width - 5, config.SCREEN_H - 30))
 
     def _draw_powerup_indicators(self, now):
-        """Draw powerup indicators as icons in the middle-right area"""
+        """Draw powerup indicators as enhanced icons at the right edge"""
         powerups_active = []
         
         if now < self.player.shield_until:
             remaining = int((self.player.shield_until - now) / 1000)
-            powerups_active.append(("SHIELD", remaining, config.POWERUP_COLOR))
+            powerups_active.append(("SHIELD", remaining, config.POWERUP_COLOR, "⬟"))
         if now < self.player.rapidfire_until:
             remaining = int((self.player.rapidfire_until - now) / 1000)
-            powerups_active.append(("RAPID", remaining, (255, 200, 50)))
+            powerups_active.append(("RAPID", remaining, (255, 200, 50), "⚡"))
         if now < self.player.speed_boost_until:
             remaining = int((self.player.speed_boost_until - now) / 1000)
-            powerups_active.append(("BOOST", remaining, (100, 255, 200)))
+            powerups_active.append(("BOOST", remaining, (100, 255, 200), "▶"))
         if now < self.player.dual_shot_until:
             remaining = int((self.player.dual_shot_until - now) / 1000)
-            powerups_active.append(("DUAL", remaining, (200, 100, 255)))
+            powerups_active.append(("DUAL", remaining, (200, 100, 255), "⬣"))
         
         if not powerups_active:
             return
         
-        # Center-right positioning
-        start_x = config.SCREEN_W - 120
-        start_y = config.SCREEN_H // 2 - (len(powerups_active) * 60) // 2
+        # Right edge positioning
+        icon_size = 55
+        spacing = 75
+        padding = 15
+        start_x = config.SCREEN_W - icon_size - padding
+        start_y = config.SCREEN_H // 2 - (len(powerups_active) * spacing) // 2
         
-        icon_size = 50
-        spacing = 60
-        
-        for idx, (name, remaining, color) in enumerate(powerups_active):
+        for idx, (name, remaining, color, symbol) in enumerate(powerups_active):
             x = start_x
             y = start_y + idx * spacing
             
-            # Draw powerup icon circle
+            # Draw outer glow effect
+            glow_color = tuple(min(255, c + 50) for c in color)
+            pygame.draw.circle(self.screen, glow_color, (x, y), icon_size // 2 + 3, 1)
+            
+            # Draw main icon circle with gradient effect (multiple circles for depth)
             pygame.draw.circle(self.screen, color, (x, y), icon_size // 2)
-            pygame.draw.circle(self.screen, (255, 255, 255), (x, y), icon_size // 2, 2)
+            dark_color = tuple(max(0, c - 40) for c in color)
+            pygame.draw.circle(self.screen, dark_color, (x - 5, y - 5), icon_size // 2 - 3)
             
-            # Draw powerup name initials in center
-            initial = name[0]
-            initial_txt = pygame.font.SysFont("arial", 20, bold=True).render(initial, True, (0, 0, 0))
-            initial_rect = initial_txt.get_rect(center=(x, y - 5))
-            self.screen.blit(initial_txt, initial_rect)
+            # Draw white border
+            pygame.draw.circle(self.screen, (255, 255, 255), (x, y), icon_size // 2, 3)
             
-            # Draw remaining time below icon
-            time_txt = pygame.font.SysFont("arial", 14, bold=True).render(f"{remaining}s", True, color)
-            self.screen.blit(time_txt, (x - 15, y + 22))
+            # Draw inner highlight
+            pygame.draw.circle(self.screen, (255, 255, 255), (x - 8, y - 8), 6)
+            
+            # Draw powerup name
+            name_font = pygame.font.SysFont("arial", 10, bold=True)
+            name_txt = name_font.render(name, True, (255, 255, 255))
+            name_rect = name_txt.get_rect(center=(x, y))
+            self.screen.blit(name_txt, (name_rect.x, name_rect.y - 2))
+            
+            # Draw remaining time in a small badge below
+            time_font = pygame.font.SysFont("arial", 12, bold=True)
+            time_txt = time_font.render(f"{remaining}s", True, (255, 255, 255))
+            
+            # Draw time badge background
+            badge_x = x - 18
+            badge_y = y + 28
+            pygame.draw.rect(self.screen, color, (badge_x - 2, badge_y - 2, 40, 18), border_radius=4)
+            pygame.draw.rect(self.screen, (0, 0, 0), (badge_x - 2, badge_y - 2, 40, 18), 1, border_radius=4)
+            self.screen.blit(time_txt, (badge_x + 2, badge_y - 1))
 
     def draw(self):
         self.screen.fill(config.BG_COLOR)
@@ -288,31 +306,42 @@ class Game:
         pygame.display.flip()
 
     def _draw_player_health_bar(self):
-        bar_x = config.SCREEN_W // 2 - 70
-        bar_y = config.SCREEN_H - 25
-        bar_width = 140
-        bar_height = 12
+        bar_x = config.SCREEN_W // 2 - 80
+        bar_y = config.SCREEN_H - 30
+        bar_width = 160
+        bar_height = 14
         
-        pygame.draw.rect(self.screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height), border_radius=3)
+        pygame.draw.rect(self.screen, (40, 40, 60), (bar_x - 2, bar_y - 2, bar_width + 4, bar_height + 4), border_radius=3)
+        pygame.draw.rect(self.screen, (30, 30, 50), (bar_x, bar_y, bar_width, bar_height), border_radius=3)
+        
         fill_width = (self.player.hp / self.player.max_hp) * bar_width
         color = (100, 255, 100) if self.player.hp > 1 else (255, 100, 100)
         pygame.draw.rect(self.screen, color, (bar_x, bar_y, int(fill_width), bar_height), border_radius=3)
-        pygame.draw.rect(self.screen, config.UI_COLOR, (bar_x, bar_y, bar_width, bar_height), 2, border_radius=3)
+        pygame.draw.rect(self.screen, (200, 220, 255), (bar_x, bar_y, bar_width, bar_height), 2, border_radius=3)
+        
+        hp_text = self.tiny_font.render(f"HP: {max(0, self.player.hp)}", True, (200, 220, 255))
+        self.screen.blit(hp_text, (bar_x - 50, bar_y - 3))
 
     def _draw_game_over(self):
         overlay = pygame.Surface((config.SCREEN_W, config.SCREEN_H), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 160))
+        overlay.fill((0, 0, 0, 180))
         self.screen.blit(overlay, (0, 0))
         
         txt1 = self.big_font.render("GAME OVER", True, (255, 100, 100))
         txt2 = self.font.render(f"Score: {self.state['score']} | Lv: {self.state['level']} | Wave: {self.state['wave']}", True, config.UI_COLOR)
         txt3 = self.font.render(f"Difficulty: {self.menu.settings.difficulty}", True, (200, 150, 100))
-        txt4 = self.font.render(f"Press R to Restart", True, config.UI_COLOR)
+        txt4 = self.font.render("R - restart   ESC - menu", True, config.UI_COLOR)
         
         self.screen.blit(txt1, txt1.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 - 60)))
+        
+        txt2 = self.font.render(f"Score: {self.state['score']}  |  Level: {self.state['level']}  |  Wave: {self.state['wave']}", True, (200, 220, 255))
         self.screen.blit(txt2, txt2.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2)))
-        self.screen.blit(txt3, txt3.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 + 40)))
-        self.screen.blit(txt4, txt4.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 + 100)))
+        
+        txt3 = self.font.render(f"Difficulty: {self.menu.settings.difficulty}", True, (220, 160, 100))
+        self.screen.blit(txt3, txt3.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 + 50)))
+        
+        txt4 = self.font.render("Press [R] to restart  or  [ESC] for menu", True, (150, 200, 150))
+        self.screen.blit(txt4, txt4.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 + 110)))
 
     def run(self):
         self.show_menu()
