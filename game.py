@@ -161,28 +161,109 @@ class Game:
             else:
                 self.player.apply_powerup(pup.ptype, now)
 
-    def draw_powerup_status(self, now):
-        y_offset = 50
-        statuses = []
+    def _draw_hud(self, now):
+        """Draw enhanced HUD with better styling and layout"""
+        # Top-left info panel
+        hud_data = [
+            ("SCORE", str(self.state['score']), (255, 215, 0)),
+            ("LEVEL", str(self.state['level']), (100, 200, 255)),
+            ("WAVE", str(self.state['wave']), (100, 255, 150)),
+        ]
+        
+        x_offset = 15
+        y_offset = 15
+        label_font_size = 16
+        value_font_size = 24
+        row_height = 45
+        
+        # Create smaller font for labels
+        label_font = pygame.font.SysFont("arial", label_font_size, bold=True)
+        
+        # Draw background panel
+        panel_width = 160
+        panel_height = len(hud_data) * row_height + 15
+        pygame.draw.rect(self.screen, (0, 0, 0, 140), (x_offset - 8, y_offset - 8, panel_width, panel_height), border_radius=10)
+        pygame.draw.rect(self.screen, (100, 150, 200), (x_offset - 8, y_offset - 8, panel_width, panel_height), 2, border_radius=10)
+        
+        # Draw HUD items with labels above values
+        current_y = y_offset
+        for label, value, color in hud_data:
+            label_txt = label_font.render(label, True, (150, 150, 150))
+            value_txt = self.font.render(value, True, color)
+            
+            self.screen.blit(label_txt, (x_offset + 10, current_y))
+            self.screen.blit(value_txt, (x_offset + 10, current_y + 18))
+            current_y += row_height
+        
+        # Top-right info panel (Difficulty only)
+        right_panel_width = 220
+        right_x = config.SCREEN_W - right_panel_width - 10
+        right_y = 15
+        
+        difficulty_label = label_font.render("DIFFICULTY", True, (150, 150, 150))
+        difficulty_value = self.font.render(self.menu.settings.difficulty, True, (200, 150, 100))
+        
+        right_panel_height = 60
+        pygame.draw.rect(self.screen, (0, 0, 0, 140), (right_x - 8, right_y - 8, right_panel_width, right_panel_height), border_radius=10)
+        pygame.draw.rect(self.screen, (150, 200, 100), (right_x - 8, right_y - 8, right_panel_width, right_panel_height), 2, border_radius=10)
+        
+        self.screen.blit(difficulty_label, (right_x + 10, right_y))
+        self.screen.blit(difficulty_value, (right_x + 10, right_y + 18))
+        
+        # FPS counter (bottom-right)
+        if self.menu.settings.show_fps:
+            fps = self.clock.get_fps()
+            fps_txt = self.tiny_font.render(f"FPS: {int(fps)}", True, (100, 255, 100))
+            fps_bg_width = 100
+            fps_bg_height = 28
+            pygame.draw.rect(self.screen, (0, 0, 0, 140), (config.SCREEN_W - fps_bg_width - 10, config.SCREEN_H - 35, fps_bg_width, fps_bg_height), border_radius=8)
+            pygame.draw.rect(self.screen, (100, 200, 100), (config.SCREEN_W - fps_bg_width - 10, config.SCREEN_H - 35, fps_bg_width, fps_bg_height), 2, border_radius=8)
+            self.screen.blit(fps_txt, (config.SCREEN_W - fps_bg_width - 5, config.SCREEN_H - 30))
+
+    def _draw_powerup_indicators(self, now):
+        """Draw powerup indicators as icons in the middle-right area"""
+        powerups_active = []
         
         if now < self.player.shield_until:
             remaining = int((self.player.shield_until - now) / 1000)
-            statuses.append((f"SHIELD [{remaining}s]", config.POWERUP_COLOR))
+            powerups_active.append(("SHIELD", remaining, config.POWERUP_COLOR))
         if now < self.player.rapidfire_until:
             remaining = int((self.player.rapidfire_until - now) / 1000)
-            statuses.append((f"RAPID [{remaining}s]", (255, 200, 50)))
+            powerups_active.append(("RAPID", remaining, (255, 200, 50)))
         if now < self.player.speed_boost_until:
             remaining = int((self.player.speed_boost_until - now) / 1000)
-            statuses.append((f"BOOST [{remaining}s]", (100, 255, 200)))
+            powerups_active.append(("BOOST", remaining, (100, 255, 200)))
         if now < self.player.dual_shot_until:
             remaining = int((self.player.dual_shot_until - now) / 1000)
-            statuses.append((f"DUAL [{remaining}s]", (200, 100, 255)))
+            powerups_active.append(("DUAL", remaining, (200, 100, 255)))
         
-        for status_text, color in statuses:
-            txt = self.small_font.render(status_text, True, color)
-            pygame.draw.rect(self.screen, (0, 0, 0, 100), (5, y_offset - 5, 220, 28), border_radius=5)
-            self.screen.blit(txt, (15, y_offset))
-            y_offset += 32
+        if not powerups_active:
+            return
+        
+        # Center-right positioning
+        start_x = config.SCREEN_W - 120
+        start_y = config.SCREEN_H // 2 - (len(powerups_active) * 60) // 2
+        
+        icon_size = 50
+        spacing = 60
+        
+        for idx, (name, remaining, color) in enumerate(powerups_active):
+            x = start_x
+            y = start_y + idx * spacing
+            
+            # Draw powerup icon circle
+            pygame.draw.circle(self.screen, color, (x, y), icon_size // 2)
+            pygame.draw.circle(self.screen, (255, 255, 255), (x, y), icon_size // 2, 2)
+            
+            # Draw powerup name initials in center
+            initial = name[0]
+            initial_txt = pygame.font.SysFont("arial", 20, bold=True).render(initial, True, (0, 0, 0))
+            initial_rect = initial_txt.get_rect(center=(x, y - 5))
+            self.screen.blit(initial_txt, initial_rect)
+            
+            # Draw remaining time below icon
+            time_txt = pygame.font.SysFont("arial", 14, bold=True).render(f"{remaining}s", True, color)
+            self.screen.blit(time_txt, (x - 15, y + 22))
 
     def draw(self):
         self.screen.fill(config.BG_COLOR)
@@ -192,29 +273,14 @@ class Game:
         
         now = pygame.time.get_ticks()
         
-        # Основной HUD
-        hud = self.font.render(
-            f"Score: {self.state['score']}  Lv: {self.state['level']}  Wave: {self.state['wave']}  HP: {max(0, self.player.hp)}/{self.player.max_hp}",
-            True,
-            config.UI_COLOR
-        )
-        self.screen.blit(hud, (8, 8))
+        # Draw enhanced HUD
+        self._draw_hud(now)
         
-        # Статус активных бонусов
-        self.draw_powerup_status(now)
+        # Powerup indicators (visual icons)
+        self._draw_powerup_indicators(now)
         
         # Полоска здоровья игрока
         self._draw_player_health_bar()
-        
-        # FPS счётчик
-        if self.menu.settings.show_fps:
-            fps = self.clock.get_fps()
-            fps_txt = self.tiny_font.render(f"FPS: {int(fps)}", True, (100, 255, 100))
-            self.screen.blit(fps_txt, (config.SCREEN_W - 100, 10))
-        
-        # Сложность
-        difficulty_txt = self.tiny_font.render(f"{self.menu.settings.difficulty}", True, (200, 150, 100))
-        self.screen.blit(difficulty_txt, (config.SCREEN_W - 140, 32))
         
         if self.state["game_over"]:
             self._draw_game_over()
@@ -241,7 +307,7 @@ class Game:
         txt1 = self.big_font.render("GAME OVER", True, (255, 100, 100))
         txt2 = self.font.render(f"Score: {self.state['score']} | Lv: {self.state['level']} | Wave: {self.state['wave']}", True, config.UI_COLOR)
         txt3 = self.font.render(f"Difficulty: {self.menu.settings.difficulty}", True, (200, 150, 100))
-        txt4 = self.font.render("R - restart   ESC - menu", True, config.UI_COLOR)
+        txt4 = self.font.render(f"Press R to Restart", True, config.UI_COLOR)
         
         self.screen.blit(txt1, txt1.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2 - 60)))
         self.screen.blit(txt2, txt2.get_rect(center=(config.SCREEN_W // 2, config.SCREEN_H // 2)))
