@@ -139,15 +139,27 @@ class Menu:
             self.screen.blit(txt, txt.get_rect(center=(config.SCREEN_W // 2, y_pos)))
 
     def _draw_difficulty_menu(self):
-        pulse = 1.0 + 0.15 * math.sin(self.animation_counter * 0.02)
-        title_size = int(72 * pulse)
+        pulse = 0.7 #1.0 + 0.08 * math.sin(self.animation_counter * 0.02)
+        title_size = int(60 * pulse)
         title_font = pygame.font.SysFont("arial", title_size, bold=True)
+        
+        # Main title with enhanced styling
         title = title_font.render("SELECT DIFFICULTY", True, config.ENEMY_COLOR)
         title_rect = title.get_rect(center=(config.SCREEN_W // 2, 60))
         
+        # Shadow effect
         shadow = title_font.render("SELECT DIFFICULTY", True, (20, 20, 50))
         self.screen.blit(shadow, (title_rect.x + 3, title_rect.y + 3))
         self.screen.blit(title, title_rect)
+        
+        # Subtitle with glow effect
+        subtitle_font = pygame.font.SysFont("arial", 28, bold=True)
+        subtitle = subtitle_font.render("Choose Your Challenge", True, (150, 150, 200))
+        self.screen.blit(subtitle, subtitle.get_rect(center=(config.SCREEN_W // 2, 120)))
+        
+        # Decorative line
+        pygame.draw.line(self.screen, (100, 150, 200), (80, 155), (config.SCREEN_W - 80, 155), 2)
+        pygame.draw.line(self.screen, (150, 200, 255), (80, 157), (config.SCREEN_W - 80, 157), 1)
         
         descriptions = {
             "Easy": "Perfect for beginners",
@@ -163,7 +175,7 @@ class Menu:
             "Nightmare": (255, 100, 100),
         }
         
-        y_start = 240
+        y_start = 220
         item_height = 75
         
         for i, difficulty in enumerate(self.difficulties):
@@ -173,8 +185,13 @@ class Menu:
             
             if is_selected:
                 scale = 1.0 + 0.1 * math.sin(self.animation_counter * 0.1)
-                pygame.draw.rect(self.screen, color, (50, y_pos - 20, 380, 55), border_radius=10)
-                pygame.draw.rect(self.screen, (255, 255, 255), (50, y_pos - 20, 380, 55), 3, border_radius=10)
+                
+                # Glow effect for selected item
+                glow_color = tuple(min(255, c + 50) for c in color)
+                pygame.draw.rect(self.screen, glow_color, (40, y_pos - 25, 400, 65), border_radius=12)
+                pygame.draw.rect(self.screen, color, (45, y_pos - 22, 390, 59), border_radius=10)
+                pygame.draw.rect(self.screen, (255, 255, 255), (45, y_pos - 22, 390, 59), 3, border_radius=10)
+                
                 text_color = (10, 10, 20)
                 font_size = int(36 * scale)
             else:
