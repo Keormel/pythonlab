@@ -240,10 +240,10 @@ class Game:
         if not powerups_active:
             return
         
-        # Right edge positioning
+        # Right edge positioning - moved closer to edge
         icon_size = 55
         spacing = 75
-        padding = 15
+        padding = 5
         start_x = config.SCREEN_W - icon_size - padding
         start_y = config.SCREEN_H // 2 - (len(powerups_active) * spacing) // 2
         
